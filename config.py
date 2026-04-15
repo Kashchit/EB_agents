@@ -10,14 +10,14 @@ from pathlib import Path
 OLLAMA_MODEL: str = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")
 
 # Generation knobs (keep defaults snappy for local inference)
-OLLAMA_NUM_PREDICT: int = int(os.environ.get("OLLAMA_NUM_PREDICT", "160"))
-OLLAMA_TEMPERATURE: float = float(os.environ.get("OLLAMA_TEMPERATURE", "0.4"))
+OLLAMA_NUM_PREDICT: int = int(os.environ.get("OLLAMA_NUM_PREDICT", "1024"))
+OLLAMA_TEMPERATURE: float = float(os.environ.get("OLLAMA_TEMPERATURE", "0.7"))
 
 # Where past decisions are stored (simple JSON file for beginner-friendly RAG)
 MEMORY_PATH: Path = Path(__file__).resolve().parent / "data" / "decision_memory.json"
 
 # How many similar past cases to inject into prompts (0 disables retrieval text)
-TOP_K_SIMILAR: int = int(os.environ.get("TOP_K_SIMILAR", "3"))
+TOP_K_SIMILAR: int = int(os.environ.get("TOP_K_SIMILAR", "1"))
 
 # If True, run a second round where each agent sees others' first-round answers
 ENABLE_CROSS_AGENT_CONTEXT: bool = os.environ.get("ENABLE_CROSS_AGENT_CONTEXT", "0") not in (
