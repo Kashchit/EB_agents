@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, List, Sequence
 
-from config import MEMORY_PATH, TOP_K_SIMILAR
+from config import MEMORY_PATH, SIMILARITY_THRESHOLD, TOP_K_SIMILAR
 
 
 def _tokenize(text: str) -> set[str]:
@@ -83,7 +83,7 @@ def retrieve_similar(problem: str, k: int | None = None, path: Path | None = Non
     scored.sort(key=lambda x: x[0], reverse=True)
     out: list[RetrievedCase] = []
     for score, rec in scored[:k]:
-        if score <= 0:
+        if score < SIMILARITY_THRESHOLD:  # skip unrelated past cases
             continue
         out.append(
             RetrievedCase(

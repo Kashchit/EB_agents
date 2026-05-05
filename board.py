@@ -60,14 +60,24 @@ def _run_parallel(
     memory_context: str,
     peer_round1: Mapping[str, str] | None,
 ) -> Dict[str, str]:
-    """Call each agent sequentially (Ollama processes one request at a time anyway)."""
-    import sys
+    """Call each agent in parallel using threads."""
     results: Dict[str, str] = {}
-    for cls in AGENT_CLASSES:
-        print(f"  ⏳ Waiting for {cls.role_name} ...", end="", flush=True)
-        role, text = _run_one_agent(cls, problem, memory_context, peer_round1)
-        results[role] = text
-        print(f" ✅", flush=True)
+    
+    with ThreadPoolExecutor(max_workers=len(AGENT_CLASSES)) as executor:
+        future_to_role = {
+            executor.submit(_run_one_agent, cls, problem, memory_context, peer_round1): cls.role_name
+            for cls in AGENT_CLASSES
+        }
+        
+        for future in as_completed(future_to_role):
+            role = future_to_role[future]
+            try:
+                _, text = future.result()
+                results[role] = text
+            except Exception as exc:
+                print(f"Agent {role} generated an exception: {exc}")
+                results[role] = f"Error generating response: {exc}"
+    
     return results
 
 

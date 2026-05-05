@@ -30,23 +30,33 @@ def stream_web_analysis(problem: str, save_to_memory: bool = True):
         yield {"role": "System", "content": msg}
         return
 
-    # Phase 1: Executives
-    problem, memory_block, round1, round2, final_views = run_executive_phases(problem)
+    problem = problem.strip()
+    from memory import retrieve_similar, format_memory_context
+    similar = retrieve_similar(problem)
+    memory_block = format_memory_context(similar)
+
+    # Phase 1: Executives (Parallel execution with streaming yield)
+    from board import AGENT_CLASSES, _run_one_agent
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     
-    # Yield each agent view immediately
-    for role in API_AGENT_ORDER:
-        if role in final_views:
-            yield {"role": role, "content": final_views[role]}
+    final_views = {}
+    with ThreadPoolExecutor(max_workers=len(AGENT_CLASSES)) as executor:
+        futures = {
+            executor.submit(_run_one_agent, cls, problem, memory_block, None): cls.role_name
+            for cls in AGENT_CLASSES
+        }
+        for future in as_completed(futures):
+            role, text = future.result()
+            final_views[role] = text
+            yield {"role": role, "content": text}
 
-    # Optional debate summary (extra call)
+    # Optional debate summary
+    debate_text = ""
     if ENABLE_DEBATE_SUMMARY:
-        round2_or_none = round2 if round2 else None
-        debate_text = summarize_debate(problem, round1, round2_or_none)
+        debate_text = summarize_debate(problem, final_views, None)
         yield {"role": "Debate", "content": debate_text}
-    else:
-        debate_text = ""
 
-    # Optional Devil's Advocate (extra call)
+    # Optional Devil's Advocate
     devil_text = ""
     if ENABLE_DEVILS_ADVOCATE:
         devil_text = run_devil(problem, memory_block, debate_text, final_views)

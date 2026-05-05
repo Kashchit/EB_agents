@@ -63,9 +63,14 @@ class BaseExecutiveAgent(ABC):
         system = (
             self.system_prompt.strip()
             + "\n\n"
-            + "Hard constraints:\n"
-            + "- Stay tightly grounded in the specific problem statement (do not give generic playbooks).\n"
-            + "- If critical details are missing, ask up to 3 clarifying questions, then proceed with explicit assumptions.\n"
-            + "- Keep it short: target 8–14 lines max, crisp bullets preferred.\n"
+            + "CRITICAL RULES — violating any of these is a failure:\n"
+            + "1. STAY ON TOPIC: Every sentence must directly address the stated problem. "
+            + "Never drift into unrelated topics (e.g., do not discuss delivery logistics if the question is about hiring).\n"
+            + "2. NO GENERIC PLAYBOOKS: Do not copy-paste standard frameworks. "
+            + "Reference the specific context of THIS problem only.\n"
+            + "3. NO INVENTED NUMBERS: Do not invent revenue figures, percentages, or timelines "
+            + "unless they were explicitly given in the problem statement.\n"
+            + "4. MISSING INFO: If you lack critical details, state 1–2 explicit assumptions, then give your view.\n"
+            + "5. LENGTH: 8–14 lines maximum. Use crisp bullets. Stop when done — do not pad.\n"
         )
         return chat_completion(system, user_message)
